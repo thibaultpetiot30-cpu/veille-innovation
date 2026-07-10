@@ -42,7 +42,14 @@
   </div>
 </header>
 
-<div class="layout">
+<nav class="view-tabs" aria-label="Navigation principale">
+  <div class="view-tabs-inner">
+    <button class="view-tab" id="tabBriefing" type="button" role="tab" aria-selected="true">Briefings</button>
+    <button class="view-tab" id="tabDeals" type="button" role="tab" aria-selected="false">Deals</button>
+  </div>
+</nav>
+
+<div class="layout" id="briefingLayout">
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
   <aside class="sidebar" id="sidebar">
@@ -65,6 +72,58 @@
     <p class="content-loading">Chargement du briefing…</p>
   </main>
 </div>
+
+<section class="deals-view" id="dealsView" tabindex="-1" hidden>
+  <div class="deals-inner">
+    <p class="doc-kicker"><span class="dot"></span> Suivi des opérations</p>
+    <h1 class="doc-title">Deals</h1>
+    <p class="doc-subtitle">Levées de fonds et opérations financières suivies par Veille Innovation.</p>
+    <hr class="doc-divider">
+
+    <div class="stat-grid" id="dealsStats">
+      <div class="stat-tile">
+        <span class="stat-label">Total levé · 30 derniers jours</span>
+        <span class="stat-value" id="statTotal30d">—</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-label">Opérations · 30 derniers jours</span>
+        <span class="stat-value" id="statCount30d">—</span>
+      </div>
+      <div class="stat-tile stat-tile--list">
+        <span class="stat-label">Top secteurs · 30 derniers jours</span>
+        <ol class="stat-rank" id="statTopSectors"><li class="stat-rank-empty">—</li></ol>
+      </div>
+    </div>
+
+    <div class="deals-toolbar" id="dealsToolbar" hidden>
+      <div class="deals-filter">
+        <label for="filterSecteur">Secteur</label>
+        <select id="filterSecteur"><option value="">Tous</option></select>
+      </div>
+      <div class="deals-filter">
+        <label for="filterPays">Pays</label>
+        <select id="filterPays"><option value="">Tous</option></select>
+      </div>
+      <div class="deals-filter">
+        <label for="filterType">Type</label>
+        <select id="filterType"><option value="">Tous</option></select>
+      </div>
+      <div class="deals-filter deals-filter--range">
+        <label for="filterMontantMin">Montant (M€)</label>
+        <div class="range-inputs">
+          <input type="number" id="filterMontantMin" placeholder="Min" min="0" inputmode="decimal">
+          <span class="range-sep">–</span>
+          <input type="number" id="filterMontantMax" placeholder="Max" min="0" inputmode="decimal">
+        </div>
+      </div>
+      <button class="deals-filter-reset" id="filterReset" type="button" hidden>Réinitialiser les filtres</button>
+    </div>
+
+    <div class="deals-table-wrap" id="dealsTableWrap">
+      <p class="content-loading">Chargement des opérations…</p>
+    </div>
+  </div>
+</section>
 
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" defer></script>
 <script src="js/app.js" defer></script>
