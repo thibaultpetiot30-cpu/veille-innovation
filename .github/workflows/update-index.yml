@@ -1,0 +1,38 @@
+name: Update data index
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "data/*.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-index:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Generate data/index.json
+        run: node scripts/generate-index.js
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/index.json
+          if git diff --cached --quiet; then
+            echo "index.json inchange, rien a commit."
+          else
+            git commit -m "chore: mise a jour de data/index.json"
+            git push
+          fi

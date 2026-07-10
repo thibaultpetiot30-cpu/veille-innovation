@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Veille Innovation — Startup · VC · IA · Tech · Macro</title>
+<meta name="description" content="Briefing quotidien sur l'écosystème startup, venture capital et intelligence artificielle en France et en Europe.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8A%3C/text%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,440;0,9..144,560;0,9..144,650;1,9..144,440;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <button class="icon-btn nav-toggle" id="navToggle" aria-label="Ouvrir le menu des archives" aria-expanded="false" aria-controls="sidebar">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <a class="brand" href="#" id="brandHome" aria-label="Retour au dernier briefing">
+      <span class="brand-mark" aria-hidden="true">V</span>
+      <span class="brand-text">
+        <span class="brand-name">Veille Innovation</span>
+        <span class="brand-tag">Startup · VC · IA · Tech · Macro</span>
+      </span>
+    </a>
+
+    <div class="header-actions">
+      <button class="icon-btn search-toggle" id="searchToggle" aria-label="Ouvrir la recherche" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>
+      </button>
+      <span class="current-date-pill" id="currentDatePill" aria-live="polite">—</span>
+      <button class="icon-btn theme-toggle" id="themeToggle" aria-label="Basculer le thème clair / sombre">
+        <svg class="icon-sun" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-search" role="search">
+      <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>
+      <input type="search" id="searchInput" placeholder="Rechercher dans les archives…" aria-label="Recherche plein texte dans les archives" autocomplete="off">
+      <button class="search-clear" id="searchClear" aria-label="Effacer la recherche" hidden>&times;</button>
+    </div>
+
+    <div class="sidebar-body" id="sidebarBody">
+      <p class="sidebar-loading">Chargement des archives…</p>
+    </div>
+
+    <div class="sidebar-footer">
+      <p>Publié automatiquement chaque matin.</p>
+    </div>
+  </aside>
+
+  <main class="content" id="content" tabindex="-1">
+    <p class="content-loading">Chargement du briefing…</p>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" defer></script>
+<script src="js/app.js" defer></script>
+</body>
+</html>
