@@ -1,18 +1,18 @@
 /* ==========================================================================
-   Veille Innovation — design system
+   Veille Innovation — design system (editorial / BBC-inspired)
    ========================================================================== */
 
 :root {
   /* Neutrals — light */
-  --page: #f7f6f2;
-  --surface: #fffefb;
+  --page: #ffffff;
+  --surface: #ffffff;
   --surface-raised: #ffffff;
   --ink: #17140f;
   --ink-secondary: #55503f;
   --ink-muted: #6b6555; /* darkened from #8c8674 — 3.4:1 on --page failed WCAG AA (4.5:1); this is 5.4:1 */
-  --border: #e7e2d6;
-  --border-strong: #d8d2c2;
-  --ring: rgba(23, 20, 15, 0.08);
+  --border: #e2ded2;
+  --border-strong: #cfc9b8;
+  --ring: rgba(23, 20, 15, 0.06);
   --shadow-color: 220 20% 20%;
 
   /* Signature accent (bronze / gold — finance research note) */
@@ -32,12 +32,11 @@
   --cat-tech: #c9541e;
   --cat-macro: #b8860f;
 
-  --font-serif: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   --content-width: 700px;
-  --sidebar-width: 300px;
-  --header-height: 68px;
+  --sidebar-width: 320px;
 
   color-scheme: light;
 }
@@ -125,117 +124,137 @@ a { color: inherit; }
   color: var(--ink);
 }
 
-/* ---------------------------------- Header --------------------------------- */
+/* ---------------------------------- Masthead --------------------------------- */
 
-.site-header {
+.masthead {
+  border-bottom: 1px solid var(--border);
+  background: var(--page);
+}
+
+.masthead-top {
+  text-align: center;
+  padding: 26px 20px 16px;
+}
+
+.brand {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 6px;
+}
+.brand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.brand-name {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(22px, 3.2vw, 30px);
+  letter-spacing: -0.01em;
+}
+
+.brand-tag {
+  font-size: 12px;
+  color: var(--ink-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.masthead-nav {
   position: sticky;
   top: 0;
   z-index: 40;
-  height: var(--header-height);
-  background: color-mix(in srgb, var(--page) 88%, transparent);
-  backdrop-filter: blur(10px) saturate(1.4);
-  -webkit-backdrop-filter: blur(10px) saturate(1.4);
-  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--page) 92%, transparent);
+  backdrop-filter: blur(8px) saturate(1.3);
+  -webkit-backdrop-filter: blur(8px) saturate(1.3);
 }
 
-.header-inner {
+.masthead-nav-inner {
   max-width: 1280px;
-  height: 100%;
   margin: 0 auto;
   padding: 0 20px;
+  height: 52px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
+}
+.nav-links::-webkit-scrollbar { display: none; }
+
+.nav-link {
+  appearance: none;
+  border: none;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.nav-link:hover { color: var(--ink); }
+.nav-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.nav-link[aria-selected="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+.nav-link[aria-expanded="true"] { color: var(--ink); }
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
 }
 
 .icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--ink-secondary);
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
   flex: none;
 }
-.icon-btn:hover {
-  background: var(--ring);
-  color: var(--ink);
-}
+.icon-btn:hover { background: var(--ring); color: var(--ink); }
 .icon-btn:active { transform: scale(0.94); }
 .icon-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.nav-toggle { display: none; }
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  text-decoration: none;
-  color: inherit;
-  margin-right: auto;
-  border-radius: 10px;
-}
-.brand:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-
-.brand-mark {
-  flex: none;
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-serif);
-  font-weight: 650;
-  font-size: 18px;
-  color: #fff9ec;
-  background: linear-gradient(155deg, var(--accent), var(--accent-ink));
-  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
-}
-
-.brand-text { display: flex; flex-direction: column; line-height: 1.2; }
-
-.brand-name {
-  font-family: var(--font-serif);
-  font-weight: 600;
-  font-size: 17px;
-  letter-spacing: -0.01em;
-}
-
-.brand-tag {
-  font-size: 11px;
-  color: var(--ink-muted);
-  letter-spacing: 0.03em;
-  font-weight: 500;
-}
-@media (max-width: 560px) {
-  .brand-tag { display: none; }
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .current-date-pill {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--ink-secondary);
-  background: var(--surface-raised);
   border: 1px solid var(--border);
-  padding: 7px 13px;
+  padding: 6px 12px;
   border-radius: 999px;
   white-space: nowrap;
   letter-spacing: 0.01em;
@@ -244,91 +263,83 @@ a { color: inherit; }
   .current-date-pill { display: none; }
 }
 
-.search-toggle { display: none; }
-
-body[data-view="deals"] .nav-toggle,
-body[data-view="deals"] .search-toggle,
-body[data-view="deals"] .current-date-pill {
-  display: none;
-}
-
 .theme-toggle .icon-moon { display: none; }
 :root[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
 :root[data-theme="dark"] .theme-toggle .icon-moon { display: inline-flex; }
 .theme-toggle svg { transition: transform 0.3s ease; }
 .theme-toggle:active svg { transform: rotate(25deg); }
 
-/* ---------------------------------- View tabs ---------------------------------- */
-
-.view-tabs {
-  position: sticky;
-  top: var(--header-height);
-  z-index: 30;
-  background: color-mix(in srgb, var(--page) 88%, transparent);
-  backdrop-filter: blur(10px) saturate(1.4);
-  -webkit-backdrop-filter: blur(10px) saturate(1.4);
-  border-bottom: 1px solid var(--border);
+/* Secondary subnav */
+.masthead-subnav {
+  border-top: 1px solid var(--border);
 }
-
-.view-tabs-inner {
+.subnav-inner {
   max-width: 1280px;
   margin: 0 auto;
   padding: 0 20px;
   display: flex;
-  gap: 4px;
+  gap: 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
-
-.view-tab {
+.subnav-inner::-webkit-scrollbar { display: none; }
+.subnav-link {
   appearance: none;
   border: none;
   background: transparent;
   font-family: var(--font-sans);
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: 12.5px;
+  font-weight: 500;
   color: var(--ink-muted);
-  padding: 13px 4px 11px;
-  margin: 0 12px 0 0;
+  padding: 9px 0;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+  transition: color 0.15s ease;
 }
-.view-tab:hover { color: var(--ink); }
-.view-tab:focus-visible {
+.subnav-link:hover { color: var(--ink-secondary); }
+.subnav-link:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
-.view-tab[aria-selected="true"] {
-  color: var(--ink);
-  border-bottom-color: var(--accent);
-}
 
-/* ---------------------------------- Layout ---------------------------------- */
-
-.layout {
-  max-width: 1280px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
-  align-items: start;
-}
-.layout[hidden] { display: none; }
-
-.sidebar-backdrop {
+body[data-view="deals"] .masthead-subnav,
+body[data-view="deals"] .current-date-pill {
   display: none;
 }
 
-/* ---------------------------------- Sidebar ---------------------------------- */
+/* ---------------------------------- Sidebar (global archives drawer) ---------------------------------- */
 
 .sidebar {
-  position: sticky;
-  top: var(--header-height);
-  height: calc(100vh - var(--header-height));
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: min(360px, 88vw);
+  background: var(--page);
   border-right: 1px solid var(--border);
-  padding: 22px 16px 16px;
+  padding: 18px 16px 16px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  transform: translateX(-100%);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 60;
+}
+.sidebar.open { transform: translateX(0); }
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.sidebar-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .sidebar-search {
@@ -554,11 +565,179 @@ body[data-view="deals"] .current-date-pill {
   padding: 4px 6px 10px;
 }
 
-/* ---------------------------------- Content ---------------------------------- */
+/* ---------------------------------- Home view (front page) ---------------------------------- */
+
+.home-view { outline: none; }
+
+.home-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 36px 24px 100px;
+}
+
+.content-loading, .content-error, .home-error {
+  max-width: var(--content-width);
+  margin: 60px auto;
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+/* Hero + secondary column */
+.home-hero-row {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 44px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 32px;
+}
+@media (max-width: 860px) {
+  .home-hero-row { grid-template-columns: 1fr; gap: 28px; }
+}
+
+.hero-kicker {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--accent-ink);
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hero-kicker .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; }
+
+.hero-headline {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(28px, 4.2vw, 44px);
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  margin: 0 0 16px;
+  cursor: pointer;
+}
+.hero-headline:hover { color: var(--accent-ink); }
+
+.hero-chapo {
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ink-secondary);
+  margin: 0 0 22px;
+  max-width: 62ch;
+}
+
+.hero-visual {
+  height: 180px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-ink));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56px;
+  color: #fff9ec;
+  cursor: pointer;
+}
+
+.secondary-list {
+  display: flex;
+  flex-direction: column;
+}
+.secondary-item {
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+}
+.secondary-item:first-child { border-top: none; padding-top: 0; }
+
+.item-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cat-color, var(--accent-ink));
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+}
+.item-kicker .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cat-color, var(--accent)); flex: none; }
+
+.item-title {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.3;
+  margin: 0 0 6px;
+}
+.secondary-item:hover .item-title,
+.grid-item:hover .item-title { color: var(--accent-ink); }
+
+.item-summary {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-secondary);
+  margin: 0 0 8px;
+}
+
+.item-meta {
+  font-size: 12px;
+  color: var(--ink-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.item-meta .meta-sep { color: var(--border-strong); }
+
+/* Grid of horizontal cards */
+.home-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+.grid-item {
+  flex: 1 1 200px;
+  min-width: 200px;
+  padding: 0 20px;
+  border-left: 1px solid var(--border);
+  cursor: pointer;
+}
+.grid-item:first-child { border-left: none; padding-left: 0; }
+
+.grid-item-icon {
+  font-size: 22px;
+  margin-bottom: 10px;
+  line-height: 1;
+}
+
+@media (max-width: 860px) {
+  .home-grid { flex-direction: column; }
+  .grid-item {
+    flex: 1 1 auto;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding: 20px 0 0;
+    margin-top: 20px;
+  }
+  .grid-item:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+}
+
+/* transient scroll-target highlight, shared with detail sections */
+.flash-target {
+  animation: flash-bg 1.6s ease;
+}
+@keyframes flash-bg {
+  0% { background: var(--accent-tint-strong); }
+  100% { background: transparent; }
+}
+
+/* ---------------------------------- Briefing detail ---------------------------------- */
+
+.briefing-layout { outline: none; }
 
 .content {
   min-width: 0;
-  padding: 44px 24px 100px;
+  padding: 40px 24px 100px;
   outline: none;
 }
 
@@ -567,15 +746,7 @@ body[data-view="deals"] .current-date-pill {
   margin: 0 auto;
 }
 
-.content-loading, .content-error {
-  max-width: var(--content-width);
-  margin: 60px auto;
-  text-align: center;
-  color: var(--ink-muted);
-  font-size: 14px;
-}
-
-/* Masthead (from document H1 / H3) */
+/* Masthead of a single briefing document */
 .doc-kicker {
   font-size: 12px;
   font-weight: 700;
@@ -596,7 +767,7 @@ body[data-view="deals"] .current-date-pill {
 
 .doc-title {
   font-family: var(--font-serif);
-  font-weight: 620;
+  font-weight: 700;
   font-size: clamp(28px, 4.4vw, 40px);
   line-height: 1.12;
   letter-spacing: -0.015em;
@@ -620,8 +791,8 @@ body[data-view="deals"] .current-date-pill {
   margin: 0 0 28px;
 }
 
-/* Sections wrapper */
-.sections { display: flex; flex-direction: column; gap: 22px; }
+/* Sections wrapper — thin dividers instead of boxed cards */
+.sections { display: flex; flex-direction: column; }
 
 @keyframes rise {
   from { opacity: 0; transform: translateY(8px); }
@@ -634,10 +805,9 @@ body[data-view="deals"] .current-date-pill {
   gap: 12px;
   align-items: flex-start;
   background: var(--warning-tint);
-  border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent);
   border-left: 3px solid var(--warning);
-  border-radius: 12px;
   padding: 14px 16px;
+  margin-bottom: 26px;
   animation: rise 0.5s ease 0.12s both;
 }
 .banner-icon { flex: none; font-size: 17px; line-height: 1.4; }
@@ -648,20 +818,10 @@ body[data-view="deals"] .current-date-pill {
 
 /* Executive summary hero */
 .hero {
-  position: relative;
-  background: linear-gradient(175deg, var(--accent-tint-strong), var(--accent-tint) 55%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-  border-radius: 18px;
-  padding: 26px 26px 22px;
+  border-left: 3px solid var(--accent);
+  padding: 4px 0 4px 20px;
+  margin-bottom: 32px;
   animation: rise 0.5s ease 0.15s both;
-  overflow: hidden;
-}
-.hero::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--accent), transparent 85%);
 }
 .hero-title {
   display: flex;
@@ -669,14 +829,14 @@ body[data-view="deals"] .current-date-pill {
   gap: 10px;
   font-family: var(--font-serif);
   font-weight: 600;
-  font-size: 20px;
+  font-size: 21px;
   margin: 0 0 14px;
   color: var(--ink);
 }
 .hero-title .hero-icon { font-size: 22px; }
-.hero-body p { font-size: 15px; line-height: 1.6; color: var(--ink-secondary); }
+.hero-body p { font-size: 15.5px; line-height: 1.6; color: var(--ink-secondary); }
 .hero-body strong { color: var(--accent-ink); font-weight: 700; font-variant-numeric: tabular-nums; }
-.hero-body > p:first-child { font-size: 16px; color: var(--ink); margin-top: 0; }
+.hero-body > p:first-child { font-size: 16.5px; color: var(--ink); margin-top: 0; }
 
 .hero-body ol {
   list-style: none;
@@ -703,8 +863,7 @@ body[data-view="deals"] .current-date-pill {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: var(--surface-raised);
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border: 1px solid var(--border-strong);
   color: var(--accent-ink);
   font-family: var(--font-serif);
   font-weight: 650;
@@ -718,37 +877,30 @@ body[data-view="deals"] .current-date-pill {
   font-style: italic;
 }
 
-/* Cards */
+/* Sections rendered as flat editorial blocks separated by thin dividers */
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 22px 24px 20px;
+  padding: 28px 0;
+  border-top: 1px solid var(--border);
   animation: rise 0.5s ease both;
-  box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.03);
+  scroll-margin-top: 90px;
 }
+.sections .card:first-child { border-top: none; padding-top: 0; }
 
 .card-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 14px;
 }
 .card-icon {
   flex: none;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   font-size: 18px;
-  background: var(--cat-tint, var(--ring));
+  line-height: 1;
 }
 .card-title {
   font-family: var(--font-serif);
   font-weight: 600;
-  font-size: 18px;
+  font-size: 19px;
   letter-spacing: -0.005em;
   margin: 0;
   flex: 1 1 auto;
@@ -762,11 +914,8 @@ body[data-view="deals"] .current-date-pill {
   font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 4px 9px;
-  border-radius: 999px;
-  background: var(--cat-tint, var(--ring));
-  color: var(--ink-secondary);
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
   white-space: nowrap;
 }
 .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cat-color, var(--ink-muted)); flex: none; }
@@ -789,10 +938,8 @@ body[data-view="deals"] .current-date-pill {
 
 .card-body blockquote {
   margin: 14px 0;
-  padding: 10px 16px;
+  padding: 4px 0 4px 16px;
   border-left: 3px solid var(--cat-color, var(--accent));
-  background: var(--ring);
-  border-radius: 0 10px 10px 0;
   font-size: 13.5px;
   font-style: italic;
   color: var(--ink-secondary);
@@ -863,32 +1010,28 @@ body[data-view="deals"] .current-date-pill {
 .card-body pre {
   background: var(--ring);
   padding: 12px 14px;
-  border-radius: 10px;
+  border-radius: 6px;
   overflow-x: auto;
   margin: 0 0 12px;
 }
 .card-body pre code { background: none; padding: 0; }
 .card-body del { color: var(--ink-muted); }
-.card-body img { max-width: 100%; border-radius: 10px; margin: 4px 0 12px; display: block; }
+.card-body img { max-width: 100%; border-radius: 4px; margin: 4px 0 12px; display: block; }
 
-/* Category tints */
-.card[data-cat="france"] { --cat-color: var(--cat-france); --cat-tint: color-mix(in srgb, var(--cat-france) 14%, transparent); }
-.card[data-cat="vc"]     { --cat-color: var(--cat-vc);     --cat-tint: color-mix(in srgb, var(--cat-vc) 14%, transparent); }
-.card[data-cat="ia"]     { --cat-color: var(--cat-ia);     --cat-tint: color-mix(in srgb, var(--cat-ia) 14%, transparent); }
-.card[data-cat="tech"]   { --cat-color: var(--cat-tech);   --cat-tint: color-mix(in srgb, var(--cat-tech) 14%, transparent); }
-.card[data-cat="macro"]  { --cat-color: var(--cat-macro);  --cat-tint: color-mix(in srgb, var(--cat-macro) 14%, transparent); }
+/* Category tints (used as small accent dots/labels only, not backgrounds) */
+.card[data-cat="france"] { --cat-color: var(--cat-france); }
+.card[data-cat="vc"]     { --cat-color: var(--cat-vc); }
+.card[data-cat="ia"]     { --cat-color: var(--cat-ia); }
+.card[data-cat="tech"]   { --cat-color: var(--cat-tech); }
+.card[data-cat="macro"]  { --cat-color: var(--cat-macro); }
 
 /* Muted / context card */
-.card--muted {
-  border-style: dashed;
-  background: transparent;
-}
 .card--muted .card-body { color: var(--ink-muted); }
 .card--muted .card-body strong { color: var(--ink-secondary); }
 
 /* Page footer */
 .doc-footer {
-  margin-top: 40px;
+  margin-top: 12px;
   padding-top: 20px;
   border-top: 1px solid var(--border);
   font-size: 12.5px;
@@ -911,7 +1054,7 @@ body[data-view="deals"] .current-date-pill {
 .deals-inner {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 44px 24px 100px;
+  padding: 40px 24px 100px;
 }
 
 .deals-view .doc-kicker { animation: rise 0.5s ease both; }
@@ -922,17 +1065,16 @@ body[data-view="deals"] .current-date-pill {
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 0;
   margin-bottom: 28px;
+  border-top: 1px solid var(--border);
   animation: rise 0.5s ease 0.12s both;
 }
 .stat-tile {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 18px 20px;
-  box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.03);
+  padding: 18px 20px 18px 0;
+  border-left: 1px solid var(--border);
 }
+.stat-tile:first-child { border-left: none; padding-left: 0; }
 .stat-label {
   display: block;
   font-size: 12px;
@@ -995,6 +1137,8 @@ body[data-view="deals"] .current-date-pill {
 
 @media (max-width: 640px) {
   .stat-grid { grid-template-columns: 1fr; }
+  .stat-tile { border-left: none; border-top: 1px solid var(--border); padding: 18px 0; }
+  .stat-tile:first-child { border-top: none; padding-top: 0; }
 }
 
 /* Toolbar / filters */
@@ -1003,10 +1147,9 @@ body[data-view="deals"] .current-date-pill {
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 16px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px 18px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   margin-bottom: 16px;
 }
 .deals-toolbar[hidden] { display: none; }
@@ -1027,7 +1170,7 @@ body[data-view="deals"] .current-date-pill {
   font-family: var(--font-sans);
   font-size: 13.5px;
   padding: 8px 10px;
-  border-radius: 9px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--surface-raised);
   color: var(--ink);
@@ -1068,9 +1211,7 @@ body[data-view="deals"] .current-date-pill {
 
 /* Table */
 .deals-table-wrap {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  border-top: 1px solid var(--border);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -1150,7 +1291,7 @@ body[data-view="deals"] .current-date-pill {
 }
 .deals-empty strong { display: block; color: var(--ink-secondary); font-size: 15px; margin-bottom: 4px; font-weight: 600; }
 
-/* Staggered card entrance */
+/* Staggered section entrance */
 .sections .card:nth-child(1) { animation-delay: 0.18s; }
 .sections .card:nth-child(2) { animation-delay: 0.22s; }
 .sections .card:nth-child(3) { animation-delay: 0.26s; }
@@ -1167,51 +1308,17 @@ body[data-view="deals"] .current-date-pill {
 /* ---------------------------------- Responsive ---------------------------------- */
 
 @media (max-width: 900px) {
-  .layout { grid-template-columns: 1fr; }
-  .nav-toggle, .search-toggle { display: inline-flex; }
-
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    width: min(340px, 86vw);
-    background: var(--page);
-    border-right: 1px solid var(--border);
-    padding: 18px 16px 16px;
-    transform: translateX(-100%);
-    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-    z-index: 60;
-    padding-top: calc(var(--header-height) + 14px);
-  }
-  .sidebar.open { transform: translateX(0); }
-
-  .sidebar-backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.4);
-    z-index: 50;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-  }
-  .sidebar-backdrop.open {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .content { padding: 30px 18px 80px; }
-  .deals-inner { padding: 30px 18px 80px; }
+  .content { padding: 28px 18px 80px; }
+  .deals-inner { padding: 28px 18px 80px; }
+  .home-inner { padding: 28px 18px 80px; }
 }
 
 @media (max-width: 480px) {
-  .card { padding: 18px 16px 16px; border-radius: 14px; }
-  .hero { padding: 20px 18px 18px; border-radius: 14px; }
+  .card { padding: 22px 0; }
+  .hero { padding: 2px 0 2px 16px; }
   .card-header { flex-wrap: wrap; }
-  .badge { order: 3; margin-left: 50px; }
 
-  .deals-toolbar { padding: 14px; gap: 12px; }
+  .deals-toolbar { padding: 14px 0; gap: 12px; }
   .deals-filter select, .deals-filter input { min-width: 0; }
   .deals-filter-reset { margin-left: 0; }
 }

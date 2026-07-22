@@ -2,21 +2,36 @@
   "use strict";
 
   /* ------------------------------------------------------------------ *
+   *  Content sources
+   * ------------------------------------------------------------------ */
+
+  const SOURCES = {
+    web: { key: "web", label: "Web & Tendances", dir: "data", hashPrefix: "" },
+    newsletters: { key: "newsletters", label: "Newsletters", dir: "data/newsletters", hashPrefix: "newsletters" },
+  };
+
+  /* ------------------------------------------------------------------ *
    *  State
    * ------------------------------------------------------------------ */
 
   const state = {
-    dates: [],          // all available dates, desc order, e.g. "2026-07-09"
-    cache: new Map(),   // date -> raw markdown string
-    currentDate: null,
+    bySource: {
+      web: { dates: [], cache: new Map(), currentDate: null },
+      newsletters: { dates: [], cache: new Map(), currentDate: null },
+    },
+    activeSource: "web",     // "web" | "newsletters"
     searchQuery: "",
-    currentView: "briefing",   // "briefing" | "deals"
+    currentView: "home",     // "home" | "briefing" | "deals"
     deals: null,                // null = not fetched yet, [] = fetched (possibly empty)
     dealsEmptyReason: null,     // "missing" | "invalid" | "empty" | "error" | null
     dealsLoadState: "idle",     // "idle" | "loading" | "ready"
     dealsSort: { key: "date", dir: "desc" },
     dealsFilters: { secteur: "", pays: "", type: "", montantMin: "", montantMax: "" },
   };
+
+  function activeSrc() {
+    return state.bySource[state.activeSource];
+  }
 
   const els = {
     sidebarBody: document.getElementById("sidebarBody"),
@@ -26,12 +41,16 @@
     searchClear: document.getElementById("searchClear"),
     sidebar: document.getElementById("sidebar"),
     sidebarBackdrop: document.getElementById("sidebarBackdrop"),
-    navToggle: document.getElementById("navToggle"),
+    navArchives: document.getElementById("navArchives"),
     searchToggle: document.getElementById("searchToggle"),
     themeToggle: document.getElementById("themeToggle"),
     brandHome: document.getElementById("brandHome"),
+    homeView: document.getElementById("homeView"),
+    homeInner: document.getElementById("homeInner"),
+    subnav: document.getElementById("subnav"),
     briefingLayout: document.getElementById("briefingLayout"),
-    tabBriefing: document.getElementById("tabBriefing"),
+    tabSourceWeb: document.getElementById("tabSourceWeb"),
+    tabSourceNewsletters: document.getElementById("tabSourceNewsletters"),
     tabDeals: document.getElementById("tabDeals"),
     dealsView: document.getElementById("dealsView"),
     statTotal30d: document.getElementById("statTotal30d"),
@@ -94,6 +113,26 @@
     return fmt.format(parseDate(dateStr)).replace(".", "");
   }
 
+  function daysAgoLabel(dateStr, refDateStr) {
+    const diff = Math.round((parseDate(refDateStr) - parseDate(dateStr)) / 86400000);
+    if (diff <= 0) return "Aujourd'hui";
+    if (diff === 1) return "Hier";
+    return `Il y a ${diff} jours`;
+  }
+
+  function sectionPlainText(bodyMarkdown) {
+    const div = document.createElement("div");
+    div.innerHTML = window.marked.parse(bodyMarkdown || "");
+    return (div.textContent || "").replace(/\s+/g, " ").trim();
+  }
+
+  function truncateText(text, maxLen) {
+    if (text.length <= maxLen) return text;
+    const cut = text.slice(0, maxLen);
+    const lastSpace = cut.lastIndexOf(" ");
+    return (lastSpace > 40 ? cut.slice(0, lastSpace) : cut).trim() + "…";
+  }
+
   function parseDealDate(value) {
     if (typeof value !== "string") return null;
     const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(value.trim());
@@ -121,21 +160,26 @@
    *  Data loading
    * ------------------------------------------------------------------ */
 
-  async function loadIndex() {
-    const res = await fetch("data/index.json", { cache: "no-store" });
-    if (!res.ok) throw new Error("index.json introuvable");
-    const json = await res.json();
-    const dates = Array.isArray(json.dates) ? json.dates.slice() : [];
-    dates.sort().reverse();
-    return dates;
+  async function loadIndex(sourceKey) {
+    try {
+      const res = await fetch(`${SOURCES[sourceKey].dir}/index.json`, { cache: "no-store" });
+      if (!res.ok) return [];
+      const json = await res.json();
+      const dates = Array.isArray(json.dates) ? json.dates.slice() : [];
+      dates.sort().reverse();
+      return dates;
+    } catch (err) {
+      return [];
+    }
   }
 
-  async function loadMarkdown(dateStr) {
-    if (state.cache.has(dateStr)) return state.cache.get(dateStr);
-    const res = await fetch(`data/${dateStr}.md`, { cache: "no-store" });
+  async function loadMarkdown(sourceKey, dateStr) {
+    const src = state.bySource[sourceKey];
+    if (src.cache.has(dateStr)) return src.cache.get(dateStr);
+    const res = await fetch(`${SOURCES[sourceKey].dir}/${dateStr}.md`, { cache: "no-store" });
     if (!res.ok) throw new Error(`Briefing du ${dateStr} introuvable`);
     const text = await res.text();
-    state.cache.set(dateStr, text);
+    src.cache.set(dateStr, text);
     return text;
   }
 
@@ -207,25 +251,54 @@
   }
 
   /* ------------------------------------------------------------------ *
+   *  Shared markdown -> briefing model (used by detail render + home teasers)
+   * ------------------------------------------------------------------ */
+
+  function parseBriefing(markdown) {
+    const { preamble, sections } = splitMarkdown(markdown);
+    const { title, subtitle } = parsePreamble(preamble);
+    const { emoji: titleEmoji, rest: titleText } = extractEmoji(title);
+
+    const parsedSections = sections.map((s) => {
+      const info = classifySection(s.heading);
+      const { emoji, rest: headingText } = extractEmoji(s.heading);
+      return { ...info, emoji, headingText, bodyMarkdown: s.body };
+    });
+
+    return { title: titleText || title, titleEmoji, subtitle, sections: parsedSections };
+  }
+
+  const TEASER_KINDS = new Set(["card", "context"]);
+
+  function getTeaserSections(parsed) {
+    return parsed.sections
+      .map((s, index) => ({ ...s, index }))
+      .filter((s) => TEASER_KINDS.has(s.kind));
+  }
+
+  function getSummarySection(parsed) {
+    return parsed.sections.find((s) => s.kind === "summary") || null;
+  }
+
+  /* ------------------------------------------------------------------ *
    *  Rendering
    * ------------------------------------------------------------------ */
 
-  function renderBriefing(dateStr, markdown) {
-    const { preamble, sections } = splitMarkdown(markdown);
-    const { title, subtitle } = parsePreamble(preamble);
-    const { emoji: titleEmoji, rest: titleRest } = extractEmoji(title);
+  function renderBriefing(sourceKey, dateStr, markdown) {
+    const parsed = parseBriefing(markdown);
+    const { title, titleEmoji, subtitle, sections } = parsed;
 
     const wrap = document.createElement("div");
     wrap.className = "content-inner";
 
     const kicker = document.createElement("p");
     kicker.className = "doc-kicker";
-    kicker.innerHTML = `<span class="dot"></span> Briefing quotidien · ${formatLong(dateStr)}`;
+    kicker.innerHTML = `<span class="dot"></span> ${SOURCES[sourceKey].label} · ${formatLong(dateStr)}`;
     wrap.appendChild(kicker);
 
     const h1 = document.createElement("h1");
     h1.className = "doc-title";
-    h1.innerHTML = (titleEmoji ? `<span class="title-emoji">${titleEmoji}</span>` : "") + escapeHtml(titleRest || title);
+    h1.innerHTML = (titleEmoji ? `<span class="title-emoji">${titleEmoji}</span>` : "") + escapeHtml(title);
     wrap.appendChild(h1);
 
     if (subtitle) {
@@ -240,37 +313,37 @@
     const sectionsWrap = document.createElement("div");
     sectionsWrap.className = "sections";
 
-    for (const section of sections) {
-      const info = classifySection(section.heading);
-      const { emoji, rest: headingText } = extractEmoji(section.heading);
-      const bodyHtml = window.marked.parse(section.body || "");
+    sections.forEach((section, index) => {
+      const { kind, emoji, headingText, label, category } = section;
+      const bodyHtml = window.marked.parse(section.bodyMarkdown || "");
 
-      if (info.kind === "warning") {
+      if (kind === "warning") {
         const banner = document.createElement("div");
         banner.className = "banner";
         banner.innerHTML = `<span class="banner-icon">${emoji || "⚠️"}</span><div class="banner-body">${bodyHtml}</div>`;
         sectionsWrap.appendChild(banner);
-        continue;
+        return;
       }
 
-      if (info.kind === "summary") {
+      if (kind === "summary") {
         const hero = document.createElement("div");
         hero.className = "hero";
         hero.innerHTML = `<h2 class="hero-title"><span class="hero-icon">${emoji || "🎯"}</span>${escapeHtml(headingText)}</h2><div class="hero-body">${bodyHtml}</div>`;
         sectionsWrap.appendChild(hero);
-        continue;
+        return;
       }
 
       const card = document.createElement("article");
-      card.className = "card" + (info.kind === "context" ? " card--muted" : "");
-      if (info.category) card.dataset.cat = info.category;
+      card.className = "card" + (kind === "context" ? " card--muted" : "");
+      card.id = `section-${index}`;
+      if (category) card.dataset.cat = category;
 
       const header = document.createElement("div");
       header.className = "card-header";
       header.innerHTML = `
         <span class="card-icon" aria-hidden="true">${emoji || "📄"}</span>
         <h2 class="card-title">${escapeHtml(headingText)}</h2>
-        ${info.label ? `<span class="badge"><span class="dot"></span>${info.label}</span>` : (info.kind === "context" ? `<span class="badge">Contexte</span>` : "")}
+        ${label ? `<span class="badge"><span class="dot"></span>${label}</span>` : (kind === "context" ? `<span class="badge">Contexte</span>` : "")}
       `;
       card.appendChild(header);
 
@@ -280,7 +353,7 @@
       card.appendChild(body);
 
       sectionsWrap.appendChild(card);
-    }
+    });
 
     wrap.appendChild(sectionsWrap);
 
@@ -306,22 +379,208 @@
   }
 
   /* ------------------------------------------------------------------ *
-   *  Loading a briefing (navigation)
+   *  Home view (front page): hero + secondary column + card grid
+   *  Scoped to the active source — each tab has its own independent front page.
+   * ------------------------------------------------------------------ */
+
+  const HOME_TARGET_SECONDARY = 3;
+  const HOME_TARGET_GRID = 5;
+
+  function teaserKicker(section) {
+    if (section.label) return section.label;
+    if (section.kind === "context") return "Contexte";
+    return "Brief";
+  }
+
+  async function buildEditionItem(dateStr, latestDateStr) {
+    try {
+      const md = await loadMarkdown(state.activeSource, dateStr);
+      const parsed = parseBriefing(md);
+      const summary = getSummarySection(parsed);
+      const teasers = getTeaserSections(parsed);
+      const chapoSource = summary ? summary.bodyMarkdown : (teasers[0] ? teasers[0].bodyMarkdown : "");
+      return {
+        kind: "edition",
+        date: dateStr,
+        emoji: parsed.titleEmoji,
+        title: parsed.title,
+        summary: truncateText(sectionPlainText(chapoSource), 130),
+        meta: `${daysAgoLabel(dateStr, latestDateStr)} · Archive`,
+      };
+    } catch (err) {
+      return null;
+    }
+  }
+
+  async function renderHome() {
+    const src = activeSrc();
+
+    if (!src.dates.length) {
+      els.homeInner.innerHTML = `<p class="home-error">Aucun briefing disponible pour le moment.</p>`;
+      return;
+    }
+
+    const latest = src.dates[0];
+    src.currentDate = latest;
+    els.currentDatePill.textContent = formatLong(latest);
+
+    let md;
+    try {
+      md = await loadMarkdown(state.activeSource, latest);
+    } catch (err) {
+      els.homeInner.innerHTML = `<p class="home-error">Impossible de charger la une. ${escapeHtml(err.message)}</p>`;
+      return;
+    }
+
+    const parsed = parseBriefing(md);
+    const summary = getSummarySection(parsed);
+    const teasers = getTeaserSections(parsed);
+
+    const secondarySections = teasers.slice(0, HOME_TARGET_SECONDARY);
+    const remainingSections = teasers.slice(HOME_TARGET_SECONDARY);
+
+    const otherDates = src.dates.filter((d) => d !== latest);
+    const editionSlots = Math.max(0, HOME_TARGET_GRID - remainingSections.length);
+    const editionDates = otherDates.slice(0, editionSlots);
+    const editionItems = (await Promise.all(editionDates.map((d) => buildEditionItem(d, latest)))).filter(Boolean);
+
+    const gridItems = [...remainingSections, ...editionItems];
+
+    const chapoSource = summary ? summary.bodyMarkdown : (teasers[0] ? teasers[0].bodyMarkdown : "");
+    const heroChapo = truncateText(sectionPlainText(chapoSource), 260);
+
+    const wrap = document.createElement("div");
+
+    const heroRow = document.createElement("div");
+    heroRow.className = "home-hero-row";
+
+    const heroMain = document.createElement("div");
+    heroMain.innerHTML = `
+      <p class="hero-kicker"><span class="dot"></span> ${SOURCES[state.activeSource].label} · ${formatLong(latest)}</p>
+      <h1 class="hero-headline" tabindex="0" role="link">${parsed.titleEmoji ? escapeHtml(parsed.titleEmoji) + " " : ""}${escapeHtml(parsed.title)}</h1>
+      <p class="hero-chapo">${escapeHtml(heroChapo)}</p>
+      <div class="hero-visual" tabindex="0" role="link" aria-label="Ouvrir le briefing du jour">${escapeHtml(parsed.titleEmoji || "📊")}</div>
+    `;
+    const openLatest = () => goToSection(latest, null);
+    heroMain.querySelector(".hero-headline").addEventListener("click", openLatest);
+    heroMain.querySelector(".hero-headline").addEventListener("keydown", (e) => { if (e.key === "Enter") openLatest(); });
+    heroMain.querySelector(".hero-visual").addEventListener("click", openLatest);
+    heroMain.querySelector(".hero-visual").addEventListener("keydown", (e) => { if (e.key === "Enter") openLatest(); });
+    heroRow.appendChild(heroMain);
+
+    const secondaryList = document.createElement("div");
+    secondaryList.className = "secondary-list";
+    if (secondarySections.length === 0) {
+      secondaryList.innerHTML = `<p class="item-summary">D'autres rubriques arriveront prochainement.</p>`;
+    }
+    for (const section of secondarySections) {
+      const item = document.createElement("article");
+      item.className = "secondary-item";
+      if (section.category) item.dataset.cat = section.category;
+      item.tabIndex = 0;
+      item.setAttribute("role", "link");
+      item.innerHTML = `
+        <p class="item-kicker"><span class="dot"></span>${escapeHtml(teaserKicker(section))}</p>
+        <h2 class="item-title">${section.emoji ? escapeHtml(section.emoji) + " " : ""}${escapeHtml(section.headingText)}</h2>
+        <p class="item-summary">${escapeHtml(truncateText(sectionPlainText(section.bodyMarkdown), 110))}</p>
+        <p class="item-meta">Aujourd'hui<span class="meta-sep">│</span>${escapeHtml(teaserKicker(section))}</p>
+      `;
+      const go = () => goToSection(latest, section.index);
+      item.addEventListener("click", go);
+      item.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+      secondaryList.appendChild(item);
+    }
+    heroRow.appendChild(secondaryList);
+    wrap.appendChild(heroRow);
+
+    if (gridItems.length) {
+      const grid = document.createElement("div");
+      grid.className = "home-grid";
+      for (const g of gridItems) {
+        const cell = document.createElement("article");
+        cell.className = "grid-item";
+        cell.tabIndex = 0;
+        cell.setAttribute("role", "link");
+        if (g.kind === "edition") {
+          cell.innerHTML = `
+            <div class="grid-item-icon">${escapeHtml(g.emoji || "📅")}</div>
+            <h2 class="item-title">${escapeHtml(g.title)}</h2>
+            <p class="item-summary">${escapeHtml(g.summary)}</p>
+            <p class="item-meta">${escapeHtml(g.meta)}</p>
+          `;
+          const go = () => goToSection(g.date, null);
+          cell.addEventListener("click", go);
+          cell.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+        } else {
+          if (g.category) cell.dataset.cat = g.category;
+          cell.innerHTML = `
+            <div class="grid-item-icon">${escapeHtml(g.emoji || "📄")}</div>
+            <h2 class="item-title">${escapeHtml(g.headingText)}</h2>
+            <p class="item-summary">${escapeHtml(truncateText(sectionPlainText(g.bodyMarkdown), 110))}</p>
+            <p class="item-meta">Aujourd'hui<span class="meta-sep">│</span>${escapeHtml(teaserKicker(g))}</p>
+          `;
+          const go = () => goToSection(latest, g.index);
+          cell.addEventListener("click", go);
+          cell.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+        }
+        grid.appendChild(cell);
+      }
+      wrap.appendChild(grid);
+    }
+
+    els.homeInner.innerHTML = "";
+    els.homeInner.appendChild(wrap);
+  }
+
+  async function goToSection(dateStr, sectionIndex) {
+    const src = activeSrc();
+    if (state.currentView !== "briefing" || src.currentDate !== dateStr) {
+      setView("briefing");
+      await loadBriefing(dateStr);
+    }
+    if (sectionIndex === null || sectionIndex === undefined) return;
+    const target = document.getElementById(`section-${sectionIndex}`);
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    target.classList.add("flash-target");
+    setTimeout(() => target.classList.remove("flash-target"), 1600);
+  }
+
+  async function goToCategory(category) {
+    const src = activeSrc();
+    const latest = src.dates[0];
+    if (!latest) return;
+    if (state.currentView !== "briefing" || src.currentDate !== latest) {
+      setView("briefing");
+      await loadBriefing(latest);
+    }
+    const target = document.querySelector(`.card[data-cat="${category}"]`);
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    target.classList.add("flash-target");
+    setTimeout(() => target.classList.remove("flash-target"), 1600);
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Loading a briefing (navigation) — always targets the active source
    * ------------------------------------------------------------------ */
 
   async function loadBriefing(dateStr, { pushHash = true } = {}) {
-    if (!state.dates.includes(dateStr)) return;
-    state.currentDate = dateStr;
+    const src = activeSrc();
+    if (!src.dates.includes(dateStr)) return;
+    if (state.currentView !== "briefing") setView("briefing", { pushHash: false });
+    src.currentDate = dateStr;
+    const cfg = SOURCES[state.activeSource];
     els.currentDatePill.textContent = formatLong(dateStr);
-    document.title = `${formatLong(dateStr)} — Veille Innovation`;
-    if (pushHash) history.replaceState(null, "", `#${dateStr}`);
+    document.title = `${formatLong(dateStr)} — ${cfg.label} — Veille Innovation`;
+    if (pushHash) history.replaceState(null, "", cfg.hashPrefix ? `#${cfg.hashPrefix}/${dateStr}` : `#${dateStr}`);
     setActiveSidebarItem(dateStr);
-    closeMobileSidebar();
+    closeSidebar();
 
     els.content.innerHTML = `<p class="content-loading">Chargement du briefing…</p>`;
     try {
-      const md = await loadMarkdown(dateStr);
-      renderBriefing(dateStr, md);
+      const md = await loadMarkdown(state.activeSource, dateStr);
+      renderBriefing(state.activeSource, dateStr, md);
     } catch (err) {
       renderError("Impossible de charger ce briefing. " + err.message);
     }
@@ -334,12 +593,13 @@
   }
 
   /* ------------------------------------------------------------------ *
-   *  Sidebar: archive list grouped by month
+   *  Sidebar: archive list grouped by month, scoped to the active source
    * ------------------------------------------------------------------ */
 
   function buildSidebarArchives() {
+    const dates = activeSrc().dates;
     const groups = new Map(); // "YYYY-MM" -> [dates]
-    for (const d of state.dates) {
+    for (const d of dates) {
       const key = d.slice(0, 7);
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(d);
@@ -348,18 +608,18 @@
     const frag = document.createDocumentFragment();
     let first = true;
 
-    for (const [key, dates] of groups) {
+    for (const [key, groupDates] of groups) {
       const details = document.createElement("details");
       details.className = "archive-group";
       details.open = first;
 
       const summary = document.createElement("summary");
-      summary.innerHTML = `<svg class="chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>${formatMonthGroup(dates[0])}</span><span class="count">${dates.length}</span>`;
+      summary.innerHTML = `<svg class="chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>${formatMonthGroup(groupDates[0])}</span><span class="count">${groupDates.length}</span>`;
       details.appendChild(summary);
 
       const ul = document.createElement("ul");
       ul.className = "archive-list";
-      for (const d of dates) {
+      for (const d of groupDates) {
         const li = document.createElement("li");
         const btn = document.createElement("button");
         btn.className = "archive-item";
@@ -376,7 +636,7 @@
     }
 
     els.sidebarBody.innerHTML = "";
-    if (state.dates.length === 0) {
+    if (dates.length === 0) {
       els.sidebarBody.innerHTML = `<p class="sidebar-empty">Aucune archive disponible.</p>`;
       return;
     }
@@ -384,7 +644,7 @@
   }
 
   /* ------------------------------------------------------------------ *
-   *  Full-text search
+   *  Full-text search — global across both sources
    * ------------------------------------------------------------------ */
 
   function normalize(str) {
@@ -419,23 +679,32 @@
 
     els.sidebarBody.innerHTML = `<p class="search-status">Recherche en cours…</p>`;
 
-    await Promise.all(state.dates.map((d) => loadMarkdown(d).catch(() => "")));
+    const sourceKeys = Object.keys(SOURCES);
+    await Promise.all(
+      sourceKeys.flatMap((key) =>
+        state.bySource[key].dates.map((d) => loadMarkdown(key, d).catch(() => ""))
+      )
+    );
 
     const needle = normalize(query);
     const results = [];
-    for (const d of state.dates) {
-      const raw = state.cache.get(d) || "";
-      const plain = stripMarkdown(raw);
-      const idx = normalize(plain).indexOf(needle);
-      if (idx !== -1) {
-        const start = Math.max(0, idx - 50);
-        const end = Math.min(plain.length, idx + needle.length + 70);
-        let snippet = plain.slice(start, end).trim();
-        if (start > 0) snippet = "…" + snippet;
-        if (end < plain.length) snippet += "…";
-        results.push({ date: d, snippet });
+    for (const key of sourceKeys) {
+      const src = state.bySource[key];
+      for (const d of src.dates) {
+        const raw = src.cache.get(d) || "";
+        const plain = stripMarkdown(raw);
+        const idx = normalize(plain).indexOf(needle);
+        if (idx !== -1) {
+          const start = Math.max(0, idx - 50);
+          const end = Math.min(plain.length, idx + needle.length + 70);
+          let snippet = plain.slice(start, end).trim();
+          if (start > 0) snippet = "…" + snippet;
+          if (end < plain.length) snippet += "…";
+          results.push({ source: key, date: d, snippet });
+        }
       }
     }
+    results.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
     renderSearchResults(query, results);
   }
@@ -464,8 +733,10 @@
       const btn = document.createElement("button");
       btn.className = "search-result";
       btn.type = "button";
-      btn.innerHTML = `<span class="sr-date">${formatLong(r.date)}</span><span class="sr-snippet">${highlightTerm(r.snippet, query)}</span>`;
+      btn.innerHTML = `<span class="sr-date">${formatLong(r.date)} · ${SOURCES[r.source].label}</span><span class="sr-snippet">${highlightTerm(r.snippet, query)}</span>`;
       btn.addEventListener("click", async () => {
+        switchSource(r.source);
+        setView("briefing", { pushHash: false });
         await loadBriefing(r.date);
         flashHighlight(query);
       });
@@ -507,8 +778,9 @@
   function clearSearch() {
     els.searchInput.value = "";
     els.searchClear.hidden = true;
+    state.searchQuery = "";
     buildSidebarArchives();
-    setActiveSidebarItem(state.currentDate);
+    setActiveSidebarItem(activeSrc().currentDate);
   }
 
   /* ------------------------------------------------------------------ *
@@ -828,46 +1100,85 @@
     renderDealsTableView();
   }
 
+  /* ------------------------------------------------------------------ *
+   *  Source switching (Web & Tendances / Newsletters tabs)
+   * ------------------------------------------------------------------ */
+
+  function switchSource(sourceKey) {
+    if (state.activeSource === sourceKey) return;
+    state.activeSource = sourceKey;
+  }
+
   function setView(view, { pushHash = true } = {}) {
     state.currentView = view;
     const isDeals = view === "deals";
+    const isHome = view === "home";
     document.body.dataset.view = view;
-    els.briefingLayout.hidden = isDeals;
+    els.homeView.hidden = !isHome;
+    els.briefingLayout.hidden = isHome || isDeals;
     els.dealsView.hidden = !isDeals;
-    els.tabBriefing.setAttribute("aria-selected", String(!isDeals));
+    els.tabSourceWeb.setAttribute("aria-selected", String(!isDeals && state.activeSource === "web"));
+    els.tabSourceNewsletters.setAttribute("aria-selected", String(!isDeals && state.activeSource === "newsletters"));
     els.tabDeals.setAttribute("aria-selected", String(isDeals));
-    closeMobileSidebar();
+    closeSidebar();
 
     if (isDeals) {
       document.title = "Deals — Veille Innovation";
       if (pushHash) history.replaceState(null, "", "#deals");
       els.dealsView.focus({ preventScroll: true });
       ensureDealsLoaded();
+    } else if (isHome) {
+      const cfg = SOURCES[state.activeSource];
+      document.title = state.activeSource === "web" ? "Veille Innovation" : `${cfg.label} — Veille Innovation`;
+      if (pushHash) history.replaceState(null, "", cfg.hashPrefix ? `#${cfg.hashPrefix}` : "#home");
+      els.homeView.focus({ preventScroll: true });
+      renderHome();
     } else {
-      if (state.currentDate) {
-        if (pushHash) history.replaceState(null, "", `#${state.currentDate}`);
-        document.title = `${formatLong(state.currentDate)} — Veille Innovation`;
+      const cur = activeSrc().currentDate;
+      if (cur) {
+        const cfg = SOURCES[state.activeSource];
+        if (pushHash) history.replaceState(null, "", cfg.hashPrefix ? `#${cfg.hashPrefix}/${cur}` : `#${cur}`);
+        document.title = `${formatLong(cur)} — ${cfg.label} — Veille Innovation`;
       }
     }
   }
 
   /* ------------------------------------------------------------------ *
-   *  Mobile sidebar toggle
+   *  Archives drawer (sidebar overlay)
    * ------------------------------------------------------------------ */
 
-  function openMobileSidebar() {
+  function openSidebar() {
     els.sidebar.classList.add("open");
     els.sidebarBackdrop.classList.add("open");
-    els.navToggle.setAttribute("aria-expanded", "true");
+    els.navArchives.setAttribute("aria-expanded", "true");
   }
-  function closeMobileSidebar() {
+  function closeSidebar() {
     els.sidebar.classList.remove("open");
     els.sidebarBackdrop.classList.remove("open");
-    els.navToggle.setAttribute("aria-expanded", "false");
+    els.navArchives.setAttribute("aria-expanded", "false");
   }
-  function toggleMobileSidebar() {
-    if (els.sidebar.classList.contains("open")) closeMobileSidebar();
-    else openMobileSidebar();
+  function toggleSidebar() {
+    if (els.sidebar.classList.contains("open")) closeSidebar();
+    else openSidebar();
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Hash routing
+   *  - "#deals"                       -> deals view
+   *  - "" / "#home"                   -> web home
+   *  - "#newsletters"                 -> newsletters home
+   *  - "#YYYY-MM-DD"                  -> web briefing (kept unprefixed for backward-compatible links)
+   *  - "#newsletters/YYYY-MM-DD"      -> newsletters briefing
+   * ------------------------------------------------------------------ */
+
+  function parseHash(hash) {
+    if (hash === "deals") return { view: "deals" };
+    if (hash === "" || hash === "home") return { view: "home", source: "web" };
+    if (hash === "newsletters") return { view: "home", source: "newsletters" };
+    const nl = /^newsletters\/(\d{4}-\d{2}-\d{2})$/.exec(hash);
+    if (nl) return { view: "briefing", source: "newsletters", date: nl[1] };
+    if (/^\d{4}-\d{2}-\d{2}$/.test(hash)) return { view: "briefing", source: "web", date: hash };
+    return null;
   }
 
   /* ------------------------------------------------------------------ *
@@ -878,25 +1189,37 @@
     initTheme();
 
     els.themeToggle.addEventListener("click", toggleTheme);
-    els.navToggle.addEventListener("click", toggleMobileSidebar);
+    els.navArchives.addEventListener("click", toggleSidebar);
     els.searchToggle.addEventListener("click", () => {
-      openMobileSidebar();
+      openSidebar();
       els.searchInput.focus();
     });
-    els.sidebarBackdrop.addEventListener("click", closeMobileSidebar);
+    els.sidebarBackdrop.addEventListener("click", closeSidebar);
     els.searchInput.addEventListener("input", onSearchInput);
     els.searchClear.addEventListener("click", clearSearch);
     els.brandHome.addEventListener("click", (e) => {
       e.preventDefault();
-      if (state.currentView === "deals") setView("briefing");
-      if (state.dates.length) loadBriefing(state.dates[0]);
+      setView("home");
     });
     window.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeMobileSidebar();
+      if (e.key === "Escape") closeSidebar();
     });
 
-    els.tabBriefing.addEventListener("click", () => setView("briefing"));
+    els.tabSourceWeb.addEventListener("click", () => {
+      switchSource("web");
+      if (!state.searchQuery) buildSidebarArchives();
+      setView("home");
+    });
+    els.tabSourceNewsletters.addEventListener("click", () => {
+      switchSource("newsletters");
+      if (!state.searchQuery) buildSidebarArchives();
+      setView("home");
+    });
     els.tabDeals.addEventListener("click", () => setView("deals"));
+    els.subnav.addEventListener("click", (e) => {
+      const btn = e.target.closest(".subnav-link[data-cat]");
+      if (btn) goToCategory(btn.dataset.cat);
+    });
     [els.filterSecteur, els.filterPays, els.filterType].forEach((sel) => sel.addEventListener("change", onDealsFilterChange));
     els.filterMontantMin.addEventListener("input", onDealsFilterChange);
     els.filterMontantMax.addEventListener("input", onDealsFilterChange);
@@ -920,44 +1243,67 @@
       }
     });
 
-    try {
-      state.dates = await loadIndex();
-    } catch (err) {
-      state.dates = [];
-    }
+    const [webDates, newslettersDates] = await Promise.all([loadIndex("web"), loadIndex("newsletters")]);
+    state.bySource.web.dates = webDates;
+    state.bySource.newsletters.dates = newslettersDates;
 
     buildSidebarArchives();
 
     const hash = location.hash.replace("#", "").trim();
+    const parsed = parseHash(hash);
 
-    if (hash === "deals") {
-      if (state.dates.length) {
-        state.currentDate = state.dates[0];
-        els.currentDatePill.textContent = formatLong(state.currentDate);
-        setActiveSidebarItem(state.currentDate);
-        loadBriefing(state.currentDate, { pushHash: false });
-      } else {
-        renderError("Aucun briefing disponible pour le moment.");
-      }
+    if (parsed && parsed.view === "deals") {
       setView("deals", { pushHash: false });
-    } else if (state.dates.length) {
-      const initialDate = state.dates.includes(hash) ? hash : state.dates[0];
+    } else if (parsed && parsed.view === "home") {
+      if (parsed.source !== state.activeSource) {
+        state.activeSource = parsed.source;
+        buildSidebarArchives();
+      }
+      setView("home", { pushHash: false });
+    } else if (parsed && parsed.view === "briefing" && state.bySource[parsed.source].dates.includes(parsed.date)) {
+      if (parsed.source !== state.activeSource) {
+        state.activeSource = parsed.source;
+        buildSidebarArchives();
+      }
       setView("briefing", { pushHash: false });
-      loadBriefing(initialDate, { pushHash: true });
+      loadBriefing(parsed.date, { pushHash: true });
+    } else if (state.bySource.web.dates.length || state.bySource.newsletters.dates.length) {
+      if (!state.bySource.web.dates.length) {
+        state.activeSource = "newsletters";
+        buildSidebarArchives();
+      }
+      setView("home", { pushHash: false });
     } else {
       renderError("Aucun briefing disponible pour le moment.");
     }
 
     window.addEventListener("hashchange", () => {
       const h = location.hash.replace("#", "").trim();
-      if (h === "deals") {
+      const p = parseHash(h);
+      if (!p) return;
+
+      if (p.view === "deals") {
         if (state.currentView !== "deals") setView("deals", { pushHash: false });
         return;
       }
-      if (state.currentView === "deals" && h && state.dates.includes(h)) {
-        setView("briefing", { pushHash: false });
+      if (p.view === "home") {
+        if (state.currentView !== "home" || state.activeSource !== p.source) {
+          if (p.source !== state.activeSource) {
+            state.activeSource = p.source;
+            buildSidebarArchives();
+          }
+          setView("home", { pushHash: false });
+        }
+        return;
       }
-      if (h && h !== state.currentDate && state.dates.includes(h)) loadBriefing(h, { pushHash: false });
+      if (p.view === "briefing" && state.bySource[p.source].dates.includes(p.date)) {
+        if (p.source !== state.activeSource) {
+          state.activeSource = p.source;
+          buildSidebarArchives();
+        }
+        if (state.currentView !== "briefing") setView("briefing", { pushHash: false });
+        if (p.date !== activeSrc().currentDate) loadBriefing(p.date, { pushHash: false });
+      }
     });
   }
 

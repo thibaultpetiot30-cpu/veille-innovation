@@ -9,65 +9,77 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,440;0,9..144,560;0,9..144,650;1,9..144,440;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
-<header class="site-header">
-  <div class="header-inner">
-    <button class="icon-btn nav-toggle" id="navToggle" aria-label="Ouvrir le menu des archives" aria-expanded="false" aria-controls="sidebar">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    </button>
-
-    <a class="brand" href="#" id="brandHome" aria-label="Retour au dernier briefing">
-      <span class="brand-mark" aria-hidden="true">V</span>
-      <span class="brand-text">
-        <span class="brand-name">Veille Innovation</span>
-        <span class="brand-tag">Startup · VC · IA · Tech · Macro</span>
-      </span>
+<header class="masthead">
+  <div class="masthead-top">
+    <a class="brand" href="#" id="brandHome" aria-label="Retour à l'accueil">
+      <span class="brand-name">Veille Innovation</span>
+      <span class="brand-tag">Startup · VC · IA · Tech · Macro</span>
     </a>
+  </div>
 
-    <div class="header-actions">
-      <button class="icon-btn search-toggle" id="searchToggle" aria-label="Ouvrir la recherche" aria-controls="sidebar">
-        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>
-      </button>
-      <span class="current-date-pill" id="currentDatePill" aria-live="polite">—</span>
-      <button class="icon-btn theme-toggle" id="themeToggle" aria-label="Basculer le thème clair / sombre">
-        <svg class="icon-sun" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg>
-        <svg class="icon-moon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg>
-      </button>
+  <nav class="masthead-nav" aria-label="Navigation principale">
+    <div class="masthead-nav-inner">
+      <div class="nav-links">
+        <button class="nav-link" id="tabSourceWeb" type="button" role="tab" aria-selected="true">Web &amp; Tendances</button>
+        <button class="nav-link" id="tabSourceNewsletters" type="button" role="tab" aria-selected="false">Newsletters</button>
+        <button class="nav-link" id="navArchives" type="button" aria-expanded="false" aria-controls="sidebar">Archives</button>
+        <button class="nav-link" id="tabDeals" type="button" role="tab" aria-selected="false">Deals</button>
+      </div>
+      <div class="nav-actions">
+        <button class="icon-btn search-toggle" id="searchToggle" aria-label="Ouvrir la recherche" aria-controls="sidebar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>
+        </button>
+        <span class="current-date-pill" id="currentDatePill" aria-live="polite">—</span>
+        <button class="icon-btn theme-toggle" id="themeToggle" aria-label="Basculer le thème clair / sombre">
+          <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="masthead-subnav" id="subnav" aria-label="Catégories">
+    <div class="subnav-inner">
+      <button class="subnav-link" type="button" data-cat="france">France</button>
+      <button class="subnav-link" type="button" data-cat="vc">Venture Capital</button>
+      <button class="subnav-link" type="button" data-cat="ia">Intelligence artificielle</button>
+      <button class="subnav-link" type="button" data-cat="tech">Tech</button>
+      <button class="subnav-link" type="button" data-cat="macro">Macro</button>
     </div>
   </div>
 </header>
 
-<nav class="view-tabs" aria-label="Navigation principale">
-  <div class="view-tabs-inner">
-    <button class="view-tab" id="tabBriefing" type="button" role="tab" aria-selected="true">Briefings</button>
-    <button class="view-tab" id="tabDeals" type="button" role="tab" aria-selected="false">Deals</button>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-search" role="search">
+    <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>
+    <input type="search" id="searchInput" placeholder="Rechercher dans les archives…" aria-label="Recherche plein texte dans les archives" autocomplete="off">
+    <button class="search-clear" id="searchClear" aria-label="Effacer la recherche" hidden>&times;</button>
   </div>
-</nav>
 
-<div class="layout" id="briefingLayout">
-  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <div class="sidebar-body" id="sidebarBody">
+    <p class="sidebar-loading">Chargement des archives…</p>
+  </div>
 
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-search" role="search">
-      <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>
-      <input type="search" id="searchInput" placeholder="Rechercher dans les archives…" aria-label="Recherche plein texte dans les archives" autocomplete="off">
-      <button class="search-clear" id="searchClear" aria-label="Effacer la recherche" hidden>&times;</button>
-    </div>
+  <div class="sidebar-footer">
+    <p>Publié automatiquement chaque matin.</p>
+  </div>
+</aside>
 
-    <div class="sidebar-body" id="sidebarBody">
-      <p class="sidebar-loading">Chargement des archives…</p>
-    </div>
+<section class="home-view" id="homeView" tabindex="-1">
+  <div class="home-inner" id="homeInner">
+    <p class="content-loading">Chargement de la une…</p>
+  </div>
+</section>
 
-    <div class="sidebar-footer">
-      <p>Publié automatiquement chaque matin.</p>
-    </div>
-  </aside>
-
+<div class="briefing-layout" id="briefingLayout" hidden>
   <main class="content" id="content" tabindex="-1">
     <p class="content-loading">Chargement du briefing…</p>
   </main>
